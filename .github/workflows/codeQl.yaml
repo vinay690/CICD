@@ -18,7 +18,7 @@ jobs:
       contents: read
       security-events: write
 
-    needs: [dependency-check, git-leaks]
+#    needs: [dependency-check, git-leaks]
 
     steps:
       - name: Checkout repository
