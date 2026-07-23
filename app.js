@@ -1,5 +1,4 @@
 // Importing required packages
-const http = require('http');
 const express = require('express');
 
 const app = express();
@@ -11,8 +10,10 @@ app.use(express.static(__dirname + '/app/public')); // Public folder containing 
 
 require('./app/routes')(app); // Routes are imported
 
-const server = http.createServer(app).listen(app.get('port'), function(){
-	console.log('The application is running on port ' + app.get('port'));
-}); // Http server is created
+if (require.main === module) {
+  app.listen(app.get('port'), function () {
+    console.log('The application is running on port ' + app.get('port'));
+  });
+}
 
-module.exports = server;
+module.exports = app;
