@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node app.js",
     "test": "jest --ci --runInBand",
+    "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --no-eslintrc --env node,jest --parser-options=ecmaVersion:latest --rule 'no-undef: error'"
   },
