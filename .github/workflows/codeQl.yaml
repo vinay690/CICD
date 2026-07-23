@@ -1,0 +1,33 @@
+name: codeql-analysis
+
+on:
+  push:
+    branches:[ main, develop, release/*]
+  pull_request:
+    branches: [main, develop, release/*]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    needs: [dependency-check, git-leaks]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript # Scans Node.js and JS code
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3

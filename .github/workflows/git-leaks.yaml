@@ -1,0 +1,20 @@
+name: Git Leaks Workflow
+
+on:
+  push:
+    branches:[ main, develop, release/*]
+  pull_request:
+    branches: [main, develop, release/*]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  git-leaks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Git Leaks scan
+        uses: gitleaks/gitleaks-action@v2.12.0
