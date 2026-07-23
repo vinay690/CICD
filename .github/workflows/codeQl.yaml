@@ -1,12 +1,16 @@
 name: codeql-analysis
 
 on:
-  push:
-    branches: [main, develop, release/*]
-  pull_request:
-    branches: [main, develop, release/*]
-    types: [opened, synchronize, reopened]
+  # push:
+  #   branches: [main, develop, release/*]
+  # pull_request:
+  #   branches: [main, develop, release/*]
+  #   types: [opened, synchronize, reopened]
+
   workflow_dispatch:
+
+  workflow_run:
+    workflows: ["Git Leaks Workflow", "My CI Pipeline", "Dependency Vulnerability Check"] # Use the exact 'name:' string from your other YAML files
 
 jobs:
   analyze:
