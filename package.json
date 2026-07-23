@@ -7,7 +7,7 @@
     "start": "node app.js",
     "test": "jest --ci --runInBand",
     "test:watch": "jest --watch",
-    "lint": "eslint . --no-config-lookup --config eslint.config.js"
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --no-eslintrc --env node,jest --rule 'no-undef: error'"
   },
   "author": "Adem Cemil YALCIN",
   "license": "ISC",
