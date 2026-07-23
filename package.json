@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node app.js",
     "test": "jest --ci --runInBand",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "lint": "eslint ."
   },
   "author": "Adem Cemil YALCIN",
   "license": "ISC",
