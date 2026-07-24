@@ -9,8 +9,8 @@ on:
 
   workflow_dispatch:
 
-  workflow_run:
-    workflows: ["Git Leaks Workflow", "My CI Pipeline", "Dependency Vulnerability Check"] # Use the exact 'name:' string from your other YAML files
+  # workflow_run:
+  #   workflows: ["Git Leaks Workflow", "My CI Pipeline", "Dependency Vulnerability Check"] # Use the exact 'name:' string from your other YAML files
 
 jobs:
   analyze:
