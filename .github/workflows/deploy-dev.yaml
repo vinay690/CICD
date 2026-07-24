@@ -1,0 +1,83 @@
+name: Deploy to Dev EC2
+
+on:
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-south-1
+  AWS_ACCOUNT_ID: "448049797837"
+  ECR_REPOSITORY: dev/cicd
+  CONTAINER_NAME: cicd
+  HOST_PORT: "3000"
+  CONTAINER_PORT: "3000"
+
+jobs:
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.2
+
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+
+          script: |
+
+            set -e
+
+            IMAGE=${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+
+            echo "=================================="
+            echo "Deploying Image"
+            echo "$IMAGE"
+            echo "=================================="
+
+            echo "Logging into Amazon ECR..."
+
+            aws ecr get-login-password \
+              --region ${{ env.AWS_REGION }} \
+              | docker login \
+                  --username AWS \
+                  --password-stdin \
+                  ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+
+            echo "Pulling latest image..."
+
+            docker pull $IMAGE
+
+            echo "Stopping existing container..."
+
+            docker stop ${{ env.CONTAINER_NAME }} || true
+
+            echo "Removing existing container..."
+
+            docker rm ${{ env.CONTAINER_NAME }} || true
+
+            echo "Removing dangling images..."
+
+            docker image prune -f
+
+            echo "Starting new container..."
+
+            docker run -d \
+              --name ${{ env.CONTAINER_NAME }} \
+              --restart unless-stopped \
+              -p ${{ env.HOST_PORT }}:${{ env.CONTAINER_PORT }} \
+              $IMAGE
+
+            echo "Waiting for application..."
+
+            sleep 15
+
+            echo "Running Health Check..."
+
+            curl http://localhost:${{ env.CONTAINER_PORT }}
+
+            echo "=================================="
+            echo "Deployment Successful"
+            echo "=================================="
