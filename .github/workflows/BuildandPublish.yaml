@@ -1,0 +1,137 @@
+name: 03 - Docker Build, Validate & Publish
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: simple-node-app
+  ECR_REPOSITORY: dev/cicd
+
+jobs:
+  docker:
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+
+    ####################################################
+    # Checkout Source
+    ####################################################
+
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    ####################################################
+    # Setup Docker Buildx
+    ####################################################
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    ####################################################
+    # Build Docker Image
+    ####################################################
+
+    - name: Build Docker Image
+      run: |
+        docker build \
+          -t $IMAGE_NAME:${{ github.sha }} \
+          .
+
+    ####################################################
+    # Scan Image using Trivy
+    ####################################################
+
+    - name: Scan Docker Image
+      uses: aquasecurity/trivy-action@0.28.0
+      with:
+        image-ref: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+        format: table
+        severity: HIGH,CRITICAL
+        exit-code: 1
+        ignore-unfixed: true
+
+    ####################################################
+    # Generate SBOM
+    ####################################################
+
+    - name: Generate SBOM
+      uses: anchore/sbom-action@v0
+      with:
+        image: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+        output-file: sbom.spdx.json
+
+    ####################################################
+    # Upload SBOM
+    ####################################################
+
+    - name: Upload SBOM
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom
+        path: sbom.spdx.json
+
+    ####################################################
+    # Configure AWS Credentials
+    ####################################################
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    ####################################################
+    # Login to Amazon ECR
+    ####################################################
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    ####################################################
+    # Tag Image for ECR
+    ####################################################
+
+    - name: Tag Docker Image
+      env:
+        REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      run: |
+        docker tag \
+          $IMAGE_NAME:${{ github.sha }} \
+          $REGISTRY/$ECR_REPOSITORY:${{ github.sha }}
+
+    ####################################################
+    # Push Image
+    ####################################################
+
+    - name: Push Docker Image
+      env:
+        REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      run: |
+        docker push \
+          $REGISTRY/$ECR_REPOSITORY:${{ github.sha }}
+
+    ####################################################
+    # Build Summary
+    ####################################################
+
+    - name: Publish Summary
+      run: |
+        echo "# Docker Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Status" >> $GITHUB_STEP_SUMMARY
+        echo "- Docker Image Built" >> $GITHUB_STEP_SUMMARY
+        echo "- Trivy Scan Passed" >> $GITHUB_STEP_SUMMARY
+        echo "- SBOM Generated" >> $GITHUB_STEP_SUMMARY
+        echo "- Image Published to Amazon ECR" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Image Tag: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
